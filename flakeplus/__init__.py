@@ -190,15 +190,24 @@ class Command(object):
         return EX_USAGE
 
     def expanduser(self, value):
-        if isinstance(value, basestring):
-            return os.path.expanduser(value)
+        try:
+            if isinstance(value, basestring):
+                return os.path.expanduser(value)
+        except NameError:
+            if isinstance(value, str):
+                return os.path.expanduser(value)
         return value
 
     def handle_argv(self, prog_name, argv):
         options, args = self.parse_options(prog_name, argv)
-        options = dict((k, self.expanduser(v))
-                       for k, v in vars(options).iteritems()
-                       if not k.startswith('_'))
+        try:
+            options = dict((k, self.expanduser(v))
+                           for k, v in vars(options).iteritems()
+                           if not k.startswith('_'))
+        except AttributeError:
+            options = dict((k, self.expanduser(v))
+                           for k, v in vars(options).items()
+                           if not k.startswith('_'))
         argv = map(self.expanduser, argv)
         if not argv:
             return self.die('No input files/directories')
